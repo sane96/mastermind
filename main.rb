@@ -21,21 +21,21 @@ class Game
     def player_plays
         puts "#{@turns} #{@turns == 1 ? 'turn' : 'turns'} remain"
         @player_input = gets.chomp.downcase.split(' ')
+        p @player_input
 
         if @player_input.all?{ |str| @@colors.any?{ |color| str == color}}
             @turns -= 1
             self.response
         else
-            type_again_index = @player_input.each_index.select{|i| @code.any?{ |color| color == @player_input[i]}}
-            type_again = type_again_index.map{ |typo| @player_input[typo]}
+            type_again = @player_input.select{|clr| @@colors.none?{ |color| color == clr}}
             puts "Oops seems like you have a typo: #{type_again.join(' | ')}"
-            puts "Enter colors again.."
+            puts "Guess colors again.."
             self.player_plays            
         end
     end    
 
     def response  
-        if @player_input == @color_code 
+        if @player_input == @code 
             puts "Game over, #{@player} wins!"
             puts "Do you want to play again? Y / n"
             self.reset
@@ -46,31 +46,59 @@ class Game
             self.reset
             puts "Thank you for playing with us #{@player}, have a nice day"
         else 
-            self.reset
-            counter = {}
-            @player_input.each do |color|
-                counter[color] = [] unless counter[color] 
-            end
-            info_arr1 = @player_input.map.with_index do |color, i|  
-                color = color == @code[i] ? 2 : color
-            end
-            puts info_arr1
-            # info_arr2 = info_arr1.map do |color|
-            #     unless color.class == 'String'
-            #         color
-            #     end
-            #     duplicate =  @code.each_index.select{ |clr| clr == color}   
-            #     for i in 0..duplicate.length-1 do
+            info_arr = []
+            counter2 = []
+            counter1 = []
+            counter0 = []
+            @player_input.each_with_index do |color, i|  
+                if color == @code[i] 
+                    counter2.push(i)
+                    info_arr.push(2)
+                end
+            end 
 
-            #         if  counter[color].any?{|color| color == duplicate[i]}
-            #             counter[color].push(duplicate[i]) 
-            #             color = 1
-            #         else 
-            #             color = 0
-            #         end
-            #     end
-            # end       
-            p info_arr2.sort
+            @player_input.each_with_index do |color, i|
+                if counter2.any?{|y| i == y} || 
+                   counter1.any?{|y| i == y} ||
+                   counter0.any?{|y| i == y} 
+                    next 
+                end
+
+                if color == @code.any?{|clr| clr == color}
+                    counter = @player_input.each_index.select do |x| 
+                        if counter2.any?{|y| x == y} || 
+                           counter1.any?{|y| x == y} ||
+                           counter0.any?{|y| x == y}
+                           next 
+                        end
+                        color == @player_input[x]
+                    end                   
+                    counter_code = @code.each_index.select{|x| @code[x] == color}.size
+
+                    correct_num = counter.size - counter_code
+                    if correct_num <= 0
+                        counter.size.times {info_arr.push(1)}
+                        counter1.push(counter).flatten
+                    else
+                        counter_code.times {info_arr.push(1)}
+                        correct_num.times {info_arr.push(0)}
+                        for k in 0..counter_code do
+                            counter1.push(counter[k])
+                        end
+                        for v in 0..correct_num do
+                            counter0.push(counter[v])
+                        end
+                    end
+                else
+                    info_arr.push(0)
+                    counter0.push(i)
+                end
+            end
+            
+
+
+           
+            p info_arr.sort
             
             self.player_plays
         end    
